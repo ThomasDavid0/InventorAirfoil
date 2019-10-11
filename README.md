@@ -1,0 +1,1 @@
+WIP python tool to read an airfoil .dat file, make a few changes to it, then draw it in Autodesk Inventor
