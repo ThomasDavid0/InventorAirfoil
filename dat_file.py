@@ -53,7 +53,7 @@ class AirfoilDatFile(object):
 
 class TestAirfoilDatFile(unittest.TestCase):
     def setUp(self):
-        self._airfoil = AirfoilDatFile("C:/Users/td6834/Documents/BUDDI/20_CAD/20 _Airfoils/naca2412.dat")
+        self._airfoil = AirfoilDatFile("./examples/naca2412.dat")
     
     def test_name(self):
         self.assertEqual(self._airfoil.name, "NACA 2414")
