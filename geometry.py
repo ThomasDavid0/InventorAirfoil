@@ -21,4 +21,8 @@ class Point(object):
     @property
     def array(self):
         return [self._x, self._y, self._z]
-        
+
+    def __mul__(self, value):
+        return Point(self.x*value, self.y*value, self.z*value)
+    
+    
