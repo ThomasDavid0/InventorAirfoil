@@ -7,4 +7,4 @@ To Run:
 from inventor_wing_section import InventorAirfoil
 InventorAirfoil.draw_section_in_new_part(airfoiltoolsname, chord, te_thickness)
 
-This will download the requested airfoil dat file from "http://airfoiltools.com/airfoil/seligdatfile?airfoil=" + name, scale it to the desired chord (mm), add the requested te_thickness (mm), find inventor, create a new ipt, create a sketch and draw two splines.
+This will download the requested airfoil dat file from "http://airfoiltools.com/airfoil/seligdatfile?airfoil=" + name, scale it to the desired chord (mm), add the requested te_thickness (mm), find inventor, create a new ipt, create a sketch on the parts yz plane and draw two splines.
