@@ -68,7 +68,7 @@ class InventorAirfoil(object):
 
 class TestInventorAirfoil(unittest.TestCase):
     def test_draw_airfoil(self):
-        InventorAirfoil.draw_section_in_new_part("b737a-il", 200, 3)
+        InventorAirfoil.draw_section_in_new_part("fauvel-il", 200, 3)
     
  
 if __name__ == "__main__":
