@@ -1,59 +1,36 @@
 from dat_file import AirfoilDatFile
 from geometry import Point
 from inventor_connection import Inventor, InventorPart, InventorSketch
-from tkinter  import filedialog
-import urllib.request
-from urllib.error import HTTPError
+
 import unittest
 
 
-class AirfoilNotFound(Exception):
-    pass
+class InventorAirfoil(object):
+    @staticmethod
+    def draw_section_in_new_part(airfoiltoolsname, chord, te_thickness):
+        """Downloads a dat file from airfoiltools.com and draws a spline in a new ipt.
 
-
-class Airfoil(object):
-    def __init__(self, section_name, chord, te_thickness):
-        self._section_name = section_name
-        self._chord = chord
-        self._te_thickness = te_thickness
-        self._airfoil_dat = None
-    
-    @property
-    def section_name(self):
-        return self._section_name
+        airfoiltoolsname: str: section to be downloaded from http://airfoiltools.com/airfoil/seligdatfile?airfoil=
+        chord, float, mm
+        te_thickness: float, mm, thickness will be added to top and bottom linearly from max thickness back
+        """
+        _airfoil = AirfoilDatFile(airfoiltoolsname)
+        _inventor = Inventor()
+        _part = InventorPart(_inventor.new_part_document(_airfoil.name))
+        _sketch = InventorSketch(_part.create_sketch('section', _part.origin_planes[0]), _inventor.application)
         
-    def download_airfoil_file(self):
-        if not self._airfoil_dat:
-            print("Downloading file from airfoiltools.com")
-            try:
-                airfoil_file = urllib.request.urlretrieve("http://airfoiltools.com/airfoil/seligdatfile?airfoil=" + self.section_name)
-                print("Downloaded file from airfoiltools.com")
-                return airfoil_file
-            except HTTPError as ex:
-                print("Error downloading file from airfoiltools.com: " + str(ex))
-                raise AirfoilNotFound
-    
-    def top_surface(self):
-        self.download_airfoil_file()
+        scaled_positions = [pos * (chord / 10) for pos in _airfoil.positions]
         
-    def btm_surface(self):
-        self.download_airfoil_file()
+        spline = _sketch.create_spline(scaled_positions)
+        # btm_spline = _sketch.create_spline(_airfoil.btm_surface)
 
 
-class TestAirfoil(unittest.TestCase):
+class TestInventorAirfoil(unittest.TestCase):
     def setUp(self):
         pass
     
-    def test_download(self):
-        _airfoil = Airfoil("naca2410-il", 100, 5)
-        file = _airfoil.download_airfoil_file()
-        airfoil = AirfoilDatFile(file[0])
-        self.assertEqual(airfoil.name, "NACA 2410")
-
-    def test_not_exist(self):
-        _airfoil = Airfoil("ssss", 100, 5)
-        with self.assertRaises(AirfoilNotFound):
-            file = _airfoil.download_airfoil_file()
+    def test_draw_airfoil(self):
+        InventorAirfoil.draw_section_in_new_part("kenmar-il", 100, 3)
     
  
 if __name__ == "__main__":

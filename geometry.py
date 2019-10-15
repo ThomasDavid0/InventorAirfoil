@@ -25,4 +25,3 @@ class Point(object):
     def __mul__(self, value):
         return Point(self.x*value, self.y*value, self.z*value)
     
-    
