@@ -28,8 +28,12 @@ class Inventor():
         self._application = self._mod.Application(oApp)
         self._application.SilentOperation=True
 
+    @property
+    def template_path(self):
+        return self._application.DesignProjectManager.ActiveDesignProject.TemplatesPath
+
     def new_part_document(self, name):
-        new_part = self.application.Documents.Add(constants.kPartDocumentObject, "", True)
+        new_part = self.application.Documents.Add(constants.kPartDocumentObject, self.template_path + "/Metric/Standard (mm).ipt", True)
         part_doc = self.mod.PartDocument(new_part)
         part_doc.FullFileName = name
         part_doc.DisplayName = name
@@ -49,7 +53,7 @@ class InventorPart(object):
     
     def create_sketch(self, name, plane):
         new_sketch = self._part_doc.ComponentDefinition.Sketches.Add(plane, True)
-        new_sketch.Name = "test"
+        new_sketch.Name = name
         return new_sketch
 
     @property
@@ -72,11 +76,12 @@ class InventorSketch(object):
 
     def create_point(self, location):
         if isinstance(location, Point):
-            return self._transient_geometry.CreatePoint2d(location.x, location.y)
+            return self._transient_geometry.CreatePoint2d(location.x * 0.1, location.y * 0.1)
+            # TODO for some reason positions can only be written in cm, so hardcoded conversion from mm here
         elif isinstance(location, list):
             return [self.create_point(loc) for loc in location]
         else:
-            raise TypeError("Cannot create a Point2D with a " + str(location))
+            raise TypeError("Cannot create a Point2D with a " + type(location))
 
     def create_line(self, start, end):
         p1 = self.create_point(start)

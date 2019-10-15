@@ -10,6 +10,10 @@ class DatFileFormats(Enum):
     SELIG=0
     LEDNICER=1
 
+class Surfaces(Enum):
+    TOP=0
+    BTM=1
+    UNKNOWN = 2
 
 class LineReadError(Exception):
     pass
@@ -18,19 +22,37 @@ class AirfoilNotFound(Exception):
     pass
 
 class AirfoilPoint(Point):
-    def __init__(self, dat_line):
-        self._read_dat_line(dat_line)
-
-    def _read_dat_line(self, dat_line):
+    def __init__(self, x, y, surface = Surfaces.UNKNOWN):
+        self._x = x
+        self._y = y
+        self._surface = surface
+    
+    @staticmethod
+    def from_dat_line(dat_line):
         simple = dat_line.strip().split()
         try:
-            self._x = float(simple[0])
-            self._y = float(simple[1])
+            return AirfoilPoint(float(simple[0]), float(simple[1]))
         except:
             raise LineReadError
-    
+        
+
     def __mul__(self, value):
-        return Point(self.x*value, self.y*value)
+        return AirfoilPoint(self.x*value, self.y*value, self.surface)
+
+    def __eq__(self, other):
+        return self._x == other.x and self._y == other._y
+
+    def __add__(self, other):
+        assert isinstance(other, Point)
+        return AirfoilPoint(self.x + other.x, self.y + other.y, self.surface)
+
+    @property
+    def surface(self):
+        return self._surface
+    
+    @surface.setter
+    def surface(self, value):
+        self._surface = value
 
 class AirfoilDatFile(object):
     def __init__(self, airfoiltoolsname=""):
@@ -39,8 +61,6 @@ class AirfoilDatFile(object):
         self._name = ""
         self._format = DatFileFormats.SELIG
         self._positions=[]
-        self._top_surface = []
-        self._btm_surface = []
         if self._airfoiltoolsname:
             self._read_file()
 
@@ -51,25 +71,16 @@ class AirfoilDatFile(object):
         self._name = lines.pop(0).strip()
         for line in lines:
             try:
-                self._positions.append(AirfoilPoint(line))
+                self._positions.append(AirfoilPoint.from_dat_line(line))
+                if len(self._positions) > 1:
+                    if self._positions[-2].x > self._positions[-1].x:
+                        self._positions[-1].surface = Surfaces.TOP
+                    else:
+                        self._positions[-1].surface = Surfaces.BTM
+                else:
+                    self._positions[0].surface = Surfaces.TOP
             except LineReadError:
                 pass
-        self._sort_points()
-    
-    def _sort_points(self):
-        if self._format == DatFileFormats.SELIG:
-            self._sort_selig()
-        elif self._format == DatFileFormats.LEDNICER:
-            raise LineReadError("LEDNICER Not Supported")
-
-    def _sort_selig(self):
-        # TODO this is a bodge
-        i=0
-        while self._positions[i].x > self._positions[i+1].x:
-            i+=1
-        self._top_surface = self._positions[i:0:-1].copy()
-        self._top_surface.append(self._positions[0])
-        self._btm_surface = self._positions[i:].copy()
     
     @staticmethod
     def download_airfoil_file(airfoiltoolsname):
@@ -107,16 +118,6 @@ class AirfoilDatFile(object):
         return self._name
 
     @property
-    def top_surface(self):
-        """top surface points, sorted from LE to TE, including central LE point"""
-        return self._top_surface
-
-    @property
-    def btm_surface(self):
-        """btm surface points, sorted from LE to TE, including central LE point"""
-        return self._btm_surface
-
-    @property
     def positions(self):
         return self._positions
 
@@ -136,17 +137,9 @@ class TestAirfoilDatFile(unittest.TestCase):
     def test_points(self):
         self.assertEqual(self._airfoil._positions[0].x, 1.)
         self.assertEqual(self._airfoil._positions[0].y, 0.00147)
-
-    def test_sort_selig(self):
-        self._airfoil._sort_selig()
-        self.assertEqual(self._airfoil.top_surface[0].x, 0)
-        self.assertEqual(self._airfoil.top_surface[0].y, 0)
-        self.assertEqual(self._airfoil.top_surface[-1].x, 1)
-        self.assertEqual(self._airfoil.top_surface[-1].y, 0.00147)
-        self.assertEqual(self._airfoil.btm_surface[0].x, 0)
-        self.assertEqual(self._airfoil.btm_surface[0].y, 0)
-        self.assertEqual(self._airfoil.btm_surface[-1].x, 1)
-        self.assertEqual(self._airfoil.btm_surface[-1].y, -0.00147)
+        self.assertEqual(self._airfoil._positions[0].surface, Surfaces.TOP)
+        self.assertEqual(self._airfoil._positions[5].surface, Surfaces.TOP)
+        self.assertEqual(self._airfoil._positions[-1].surface, Surfaces.BTM)
 
     def test_download(self):
         _airfoil = AirfoilDatFile("naca2410-il")
