@@ -32,11 +32,14 @@ class Inventor():
     def template_path(self):
         return self._application.DesignProjectManager.ActiveDesignProject.TemplatesPath
 
-    def new_part_document(self, name):
-        new_part = self.application.Documents.Add(constants.kPartDocumentObject, self.template_path + "/Metric/Standard (mm).ipt", True)
+    def new_part_document(self, name, template = ""):
+        if not template:
+            template = self.template_path + "/Metric/Standard (mm).ipt"
+        new_part = self.application.Documents.Add(constants.kPartDocumentObject, template, True)
         part_doc = self.mod.PartDocument(new_part)
         part_doc.FullFileName = name
         part_doc.DisplayName = name
+        
         return part_doc
 
     @property
@@ -46,11 +49,18 @@ class Inventor():
     def close_document(self, doc):
         doc.Close(True)
 
+    def new_object_collection_from_list(self, things):
+        collection = self.application.TransientObjects.CreateObjectCollection()
+        for thing in things:
+            collection.Add(thing)
+        return collection
+
+inventor = Inventor()
 
 class InventorPart(object):
     def __init__(self, part_doc):
         self._part_doc = part_doc
-    
+
     def create_sketch(self, name, plane):
         new_sketch = self._part_doc.ComponentDefinition.Sketches.Add(plane, True)
         new_sketch.Name = name
@@ -64,11 +74,33 @@ class InventorPart(object):
     def part_doc(self):
         return self._part_doc
 
+    @property
+    def parameters(self):
+        # TODO convert this to a more useful dict at some point
+        return self._part_doc.ComponentDefinition.Parameters.UserParameters
+
+    @property
+    def user_cids(self):
+        return self.part_doc.ComponentDefinition.UserCoordinateSystems
+
+    @property
+    def work_planes(self):
+        return self.part_doc.ComponentDefinition.WorkPlanes
+
+    def create_loft(self, sketches):
+        profiles = [] # TODO get profiles from sketches
+        
+        new_loft = self.part_doc.ComponentDefinition.Features.LoftFeatures.CreateLoftDefinition(
+            inventor.new_object_collection_from_list(profiles)     
+        )
+        self.part_doc.ComponentDefinition.Features.LoftFeatures.Add(new_loft)
+        return new_loft
+
 class InventorSketch(object):
-    def __init__(self, sketch, application):
+    def __init__(self, sketch):
         self._sketch = sketch
-        self._transient_geometry = application.TransientGeometry
-        self._transient_objects = application.TransientObjects
+        self._transient_geometry = inventor.application.TransientGeometry
+        self._transient_objects = inventor.application.TransientObjects
 
     @property
     def sketch(self):
@@ -129,7 +161,7 @@ class TestInventorSketch(unittest.TestCase):
     def setUp(self):
         self._inventor = Inventor()
         self._part = InventorPart(self._inventor.new_part_document('test_part_sketch'))
-        self._sketch = InventorSketch(self._part.create_sketch('test_sketch', self._part.origin_planes[0]), self._inventor.application)
+        self._sketch = InventorSketch(self._part.create_sketch('test_sketch', self._part.origin_planes[0]))
 
     def test_create_line(self):
         line = self._sketch.create_line(Point(10, 10), Point(20, 20))

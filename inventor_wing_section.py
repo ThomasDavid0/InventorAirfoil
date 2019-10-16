@@ -1,6 +1,6 @@
 from dat_file import AirfoilDatFile, Surfaces
 from geometry import Point
-from inventor_connection import Inventor, InventorPart, InventorSketch
+from inventor_connection import inventor, InventorPart, InventorSketch
 
 import unittest
 
@@ -11,12 +11,12 @@ class InventorAirfoil(object):
         self._chord = chord
         self._te_thickness = te_thickness
         self._modified_positions = []
-        self._inventor = Inventor()
-
+        
         self._part = None
         self._plane = None
         self._sketch = None
         self._spline = None
+        self._te_line = None
 
     @property
     def raw_data(self):
@@ -44,23 +44,26 @@ class InventorAirfoil(object):
         return out_point
 
     def print_on_new_part(self, origin_plane_id = 0):
-        self._part = InventorPart(self._inventor.new_part_document(self._raw_data.name))
+        self._part = InventorPart(inventor.new_part_document(self._raw_data.name))
         self.print_on_plane(self._part, self._part.origin_planes[origin_plane_id])
 
-    def print_on_plane(self, part, plane):
-        self._sketch = InventorSketch(part.create_sketch('section', plane), self._inventor.application)
+    def print_on_plane(self, part, plane, name = "section"):
+        self._plane = plane
+        self._sketch = InventorSketch(part.create_sketch(name, plane))
         self.print_on_sketch(self._sketch)
 
     def print_on_sketch(self, sketch):
+        self._sketch = sketch
         self._spline = sketch.create_spline(self.modified_positions)
+        self._te_line = sketch.create_line(self.modified_positions[0], self.modified_positions[-1])
 
     @staticmethod
     def draw_section_in_new_part(airfoiltoolsname, chord, te_thickness):
-        """Downloads a dat file from airfoiltools.com and draws a spline in a new ipt.
+        """Downloads a dat file from airfoiltools.com and draws a spline on the yz plane of a new ipt.
 
         airfoiltoolsname: str: section to be downloaded from http://airfoiltools.com/airfoil/seligdatfile?airfoil=
         chord, float, mm
-        te_thickness: float, mm, thickness will be added to top and bottom linearly from max thickness back
+        te_thickness: float, mm, thickness / 2 will be added to top and bottom linearly from the LE
         """
         _airfoil = InventorAirfoil(airfoiltoolsname, chord, te_thickness)              
         _airfoil.print_on_new_part()
@@ -68,7 +71,7 @@ class InventorAirfoil(object):
 
 class TestInventorAirfoil(unittest.TestCase):
     def test_draw_airfoil(self):
-        InventorAirfoil.draw_section_in_new_part("fauvel-il", 200, 3)
+        InventorAirfoil.draw_section_in_new_part("hobiesm-il", 200, 3)
     
  
 if __name__ == "__main__":
