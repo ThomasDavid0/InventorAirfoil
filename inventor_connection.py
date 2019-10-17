@@ -62,7 +62,7 @@ class InventorPart(object):
         self._part_doc = part_doc
 
     def create_sketch(self, name, plane):
-        new_sketch = self._part_doc.ComponentDefinition.Sketches.Add(plane, True)
+        new_sketch = self._part_doc.ComponentDefinition.Sketches.Add(plane, False)
         new_sketch.Name = name
         return new_sketch
 
@@ -87,11 +87,10 @@ class InventorPart(object):
     def work_planes(self):
         return self.part_doc.ComponentDefinition.WorkPlanes
 
-    def create_loft(self, sketches):
-        profiles = [] # TODO get profiles from sketches
-        
+    def create_loft(self, profiles):       
         new_loft = self.part_doc.ComponentDefinition.Features.LoftFeatures.CreateLoftDefinition(
-            inventor.new_object_collection_from_list(profiles)     
+            inventor.new_object_collection_from_list(profiles),
+            constants.kJoinOperation
         )
         self.part_doc.ComponentDefinition.Features.LoftFeatures.Add(new_loft)
         return new_loft

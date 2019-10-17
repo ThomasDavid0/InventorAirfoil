@@ -17,6 +17,7 @@ class InventorAirfoil(object):
         self._sketch = None
         self._spline = None
         self._te_line = None
+        self._profile = None
 
     @property
     def raw_data(self):
@@ -56,6 +57,14 @@ class InventorAirfoil(object):
         self._sketch = sketch
         self._spline = sketch.create_spline(self.modified_positions)
         self._te_line = sketch.create_line(self.modified_positions[0], self.modified_positions[-1])
+        sketch.sketch.GeometricConstraints.AddCoincident(
+            self._te_line.StartSketchPoint,
+            self._spline
+            )
+        sketch.sketch.GeometricConstraints.AddCoincident(
+            self._spline, 
+            self._te_line.EndSketchPoint
+            )
 
     @staticmethod
     def draw_section_in_new_part(airfoiltoolsname, chord, te_thickness):
@@ -68,6 +77,18 @@ class InventorAirfoil(object):
         _airfoil = InventorAirfoil(airfoiltoolsname, chord, te_thickness)              
         _airfoil.print_on_new_part()
 
+    @property
+    def sketch(self):
+        return self._sketch
+    
+    @property
+    def profile(self):
+        if not self._profile:
+            self._profile = self._sketch.sketch.Profiles.AddForSolid(
+                False, 
+                inventor.new_object_collection_from_list([self._spline, self._te_line])
+                )
+        return self._profile
 
 class TestInventorAirfoil(unittest.TestCase):
     def test_draw_airfoil(self):
