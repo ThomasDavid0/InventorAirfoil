@@ -81,6 +81,39 @@ class InventorAirfoil(object):
     def sketch(self):
         return self._sketch
     
+    @sketch.setter
+    def sketch(self, value):
+        self._sketch = value
+
+    @property
+    def part(self):
+        return self._part
+    
+    @part.setter
+    def part(self, value):
+        self._part = value
+
+    @staticmethod
+    def read_part(part, position):
+        new_section = InventorAirfoil(
+            part.parameters.Item(position + "_section").Value,
+            part.parameters.Item(position + "_chord").Value * 10,
+            part.parameters.Item(position + "_te_thickness").Value * 10
+            )
+        new_section.part = part
+        try:
+            new_section.sketch = InventorSketch(part.sketches.Item(position + '_section'))
+            new_section._spline = new_section.sketch.sketch.SketchSplines.Item(1)
+            new_section._te_line = new_section.sketch.sketch.SketchLines.Item(1)
+        except Exception:
+            pass
+        return new_section
+
+    def redraw_section(self):
+        self._spline.Delete()
+        self._te_line.Delete()
+        self.print_on_sketch(self._sketch)
+
     @property
     def profile(self):
         if not self._profile:

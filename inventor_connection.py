@@ -39,8 +39,14 @@ class Inventor():
         part_doc = self.mod.PartDocument(new_part)
         part_doc.FullFileName = name
         part_doc.DisplayName = name
-        
         return part_doc
+
+    def open_part_document(self, file):
+        return self.mod.PartDocument(self.application.Documents.Open(file))
+
+    @property
+    def active_part_document(self):
+        return self.mod.PartDocument(self.application.ActiveDocument)
 
     @property
     def open_documents(self):
@@ -59,6 +65,7 @@ inventor = Inventor()
 
 class InventorPart(object):
     def __init__(self, part_doc):
+        
         self._part_doc = part_doc
 
     def create_sketch(self, name, plane):
@@ -94,6 +101,13 @@ class InventorPart(object):
         )
         self.part_doc.ComponentDefinition.Features.LoftFeatures.Add(new_loft)
         return new_loft
+
+    def replace_loft_profiles(self, loft, new_profiles):
+        loft.Definition.Sections = inventor.new_object_collection_from_list(new_profiles)
+
+    @property
+    def sketches(self):
+        return self.part_doc.ComponentDefinition.Sketches
 
 class InventorSketch(object):
     def __init__(self, sketch):
