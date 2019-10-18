@@ -26,8 +26,7 @@ class Inventor():
             oApp.Visible = True
         self._mod = gencache.EnsureModule('{D98A091D-3A0F-4C3E-B36E-61F62068D488}', 0, 1, 0)
         self._application = self._mod.Application(oApp)
-        self._application.SilentOperation=True
-
+        
     @property
     def template_path(self):
         return self._application.DesignProjectManager.ActiveDesignProject.TemplatesPath

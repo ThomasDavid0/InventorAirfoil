@@ -4,15 +4,19 @@ import tkinter as tk
 from tkinter import filedialog
 
 def update_active():
+    inventor.application.SilentOperation=True
     wing_part = InventorPart(inventor.active_part_document)
     _segment = InventorWingSegment.update_part(wing_part)
+    inventor.application.SilentOperation=False
 
 def new_from_template():
+    inventor.application.SilentOperation=True
     _segment = InventorWingSegment.create_from_template(
         filedialog.asksaveasfilename(defaultextension=".ipt")
     )
     _segment.populate_template()
     _segment.part.part_doc.Save()
+    inventor.application.SilentOperation=False
 
 def show_user_form():
     root = tk.Tk()
