@@ -46,8 +46,7 @@ class InventorWingSegment(object):
     def redraw_sections(self):
         self._root_section.redraw_section()
         self._tip_section.redraw_section()
-        self._part.replace_loft_profiles(self._loft, [self._root_section.profile, self._tip_section.profile])
-
+        
     def _create_section(self, section, position):
         section.print_on_plane(
             self._part, 

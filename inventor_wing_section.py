@@ -56,15 +56,35 @@ class InventorAirfoil(object):
     def print_on_sketch(self, sketch):
         self._sketch = sketch
         self._spline = sketch.create_spline(self.modified_positions)
-        self._te_line = sketch.create_line(self.modified_positions[0], self.modified_positions[-1])
-        sketch.sketch.GeometricConstraints.AddCoincident(
-            self._te_line.StartSketchPoint,
-            self._spline
-            )
-        sketch.sketch.GeometricConstraints.AddCoincident(
-            self._spline, 
-            self._te_line.EndSketchPoint
-            )
+        self._te_line = sketch.sketch.SketchLines.AddByTwoPoints(
+            self._spline.FitPoint(1), 
+            self._spline.FitPoint(self._spline.FitPointCount)
+            ) 
+        #sketch.create_line(self.modified_positions[0], self.modified_positions[-1])
+        #sketch.sketch.GeometricConstraints.AddCoincident(
+        #    self._te_line.StartSketchPoint,
+        #    self._spline
+        #    )
+        #sketch.sketch.GeometricConstraints.AddCoincident(
+        #    self._spline, 
+        #    self._te_line.EndSketchPoint
+        #    )
+
+    def redraw_section(self):
+        for i in range(1, len(self.modified_positions)+1):
+            if i < self._spline.FitPointCount: # The matched points
+                self._spline.FitPoint(i).MoveTo(self._sketch.create_point(self.modified_positions[i-1]))
+            elif i == self._spline.FitPointCount: # the new points
+                if i < len(self.modified_positions):
+                    self._spline.InsertFitPoint(
+                        self._sketch.create_point(self.modified_positions[i-1]),
+                        self._spline.FitPointCount
+                        )
+
+        while self._spline.FitPointCount > i : # The old points
+            self._spline.FitPoint(i).Delete()
+        # the last point
+        self._spline.FitPoint(self._spline.FitPointCount).MoveTo(self._sketch.create_point(self._modified_positions[-1]))
 
     @staticmethod
     def draw_section_in_new_part(airfoiltoolsname, chord, te_thickness):
@@ -108,11 +128,6 @@ class InventorAirfoil(object):
         except Exception:
             pass
         return new_section
-
-    def redraw_section(self):
-        self._spline.Delete()
-        self._te_line.Delete()
-        self.print_on_sketch(self._sketch)
 
     @property
     def profile(self):
